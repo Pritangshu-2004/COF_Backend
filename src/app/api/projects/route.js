@@ -41,10 +41,10 @@ export async function POST(request) {
   try {
     const data = await request.json();
     console.log('Received project data:', data);
-    const { name, email, phone, company, projectType, notes } = data;
+    const { Name, Email, Phone, Company, Project_type, Notes, Due_date, Status, Progress } = data;
 
     // Check if client exists
-    const [existingClients] = await pool.query('SELECT Id FROM Client WHERE Email = ?', [email]);
+    const [existingClients] = await pool.query('SELECT Id FROM Client WHERE Email = ?', [Email]);
     let clientId;
     if (existingClients.length > 0) {
       clientId = existingClients[0].Id;
@@ -54,16 +54,16 @@ export async function POST(request) {
         INSERT INTO Client (Name, Email, Phone, Company, Notes, Created_at, Updated_at)
         VALUES (?, ?, ?, ?, ?, NOW(), NOW())
       `;
-      const clientResult = await pool.query(clientInsertQuery, [name, email, phone, company, notes]);
+      const clientResult = await pool.query(clientInsertQuery, [Name, Email, Phone || '', Company || '', Notes || '']);
       clientId = clientResult[0].insertId;
     }
 
     // Insert project linked to client
     const projectInsertQuery = `
       INSERT INTO Project (Name, Description, Client_id, Project_type, Start_date, Due_date, Completion_Date, Status, Priority, Progress, Current_stage, Notes, Created_at, Updated_at, Created_by)
-      VALUES (?, ?, ?, ?, NOW(), NULL, NULL, 'briefed', 'Standard', 0, NULL, ?, NOW(), NOW(), NULL)
+      VALUES (?, ?, ?, ?, NOW(), ?, NULL, ?, 'Standard', ?, NULL, ?, NOW(), NOW(), NULL)
     `;
-    await pool.query(projectInsertQuery, [name, '', clientId, projectType, notes]);
+    await pool.query(projectInsertQuery, [Name, '', clientId, Project_type, Due_date || null, Status || 'briefed', Progress || 0, Notes || '']);
 
     return new Response(JSON.stringify({ message: 'Project and client added successfully' }), {
       status: 201,
